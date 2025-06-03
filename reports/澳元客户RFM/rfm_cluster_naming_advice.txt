@@ -1,0 +1,16 @@
+群体0：一般客户
+RFM均值：Recency=100.7，Frequency=5.6，Monetary=5956.1
+服务建议：常规营销触达，关注其成长潜力。
+
+群体1：一般客户
+RFM均值：Recency=89.2，Frequency=2.3，Monetary=1334.4
+服务建议：常规营销触达，关注其成长潜力。
+
+群体2：高潜力客户
+RFM均值：Recency=91.2，Frequency=5.0，Monetary=717.6
+服务建议：加强营销互动，激励复购，转化为高价值客户。
+
+群体3：一般客户
+RFM均值：Recency=262.3，Frequency=3.0，Monetary=2498.6
+服务建议：常规营销触达，关注其成长潜力。
+

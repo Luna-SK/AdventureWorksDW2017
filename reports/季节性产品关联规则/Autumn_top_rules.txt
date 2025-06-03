@@ -1,0 +1,10 @@
+Autumn季节Top3关联规则业务解读：
+规则8: 如果购买[Touring Tire Tube]，则很可能购买[Touring Tire]。
+  - 支持度: 0.032，置信度: 0.564，提升度: 15.301
+  - 建议：可将[Touring Tire Tube]与[Touring Tire]进行捆绑促销或货架邻近陈列，提升联动销售。
+规则9: 如果购买[Touring Tire]，则很可能购买[Touring Tire Tube]。
+  - 支持度: 0.032，置信度: 0.861，提升度: 15.301
+  - 建议：可将[Touring Tire]与[Touring Tire Tube]进行捆绑促销或货架邻近陈列，提升联动销售。
+规则1: 如果购买[HL Mountain Tire]，则很可能购买[Mountain Tire Tube]。
+  - 支持度: 0.035，置信度: 0.695，提升度: 6.609
+  - 建议：可将[HL Mountain Tire]与[Mountain Tire Tube]进行捆绑促销或货架邻近陈列，提升联动销售。
