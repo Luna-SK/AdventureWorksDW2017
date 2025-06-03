@@ -2,10 +2,9 @@ import pandas as pd
 import sqlalchemy
 import os
 
-# 数据库连接信息
+# 假设DSN名称为 adventureworks
 DB_CONFIG = {
-    'host': 'localhost',
-    'port': 8433,
+    'dsn': 'adventureworks',
     'user': 'sa',
     'password': 'Alaska2017',
     'database': 'AdventureWorksDW2017',
@@ -13,12 +12,10 @@ DB_CONFIG = {
 
 def get_engine():
     """
-    创建SQLAlchemy数据库引擎
+    使用DSN方式创建SQLAlchemy数据库引擎
     """
     conn_str = (
-        f"mssql+pyodbc://{DB_CONFIG['user']}:{DB_CONFIG['password']}@"
-        f"{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
-        f"?driver=ODBC+Driver+17+for+SQL+Server"
+        f"mssql+pyodbc://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['dsn']}?charset=utf8mb4"
     )
     return sqlalchemy.create_engine(conn_str)
 
