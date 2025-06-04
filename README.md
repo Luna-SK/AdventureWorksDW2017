@@ -9,7 +9,6 @@ project/
 ├── data/        # 数据下载、缓存、处理文件
 ├── src/         # 主要Python脚本
 ├── reports/     # 分析报告、图表
-├── doc/         # 项目文档
 ├── README.md    # 项目说明
 └── pyproject.toml # 依赖管理
 ```
@@ -128,8 +127,8 @@ uv sync
 
 **macOS**
 ```bash
-# 使用Homebrew安装
-brew install --cask docker
+# 使用Homebrew安装OrbStack
+brew install orbstack
 ```
 
 **Windows**
@@ -206,7 +205,7 @@ sudo apt install -y mssql-tools18 unixodbc-dev
 sleep 30
 
 # 测试连接
-sqlcmd -S localhost,8433 -U sa -P Alaska2017 -Q "SELECT @@VERSION"
+isql -v MSSQL sa Alaska2017
 ```
 
 #### 2.5 恢复数据库
@@ -217,7 +216,7 @@ sqlcmd -S localhost,8433 -U sa -P Alaska2017 -Q "SELECT @@VERSION"
 curl -L -o AdventureWorksDW2017.bak https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorksDW2017.bak
 
 # 恢复数据库
-sqlcmd -S localhost,8433 -U sa -P Alaska2017 -Q "RESTORE DATABASE AdventureWorksDW2017 FROM DISK = '$(pwd)/AdventureWorksDW2017.bak' WITH MOVE 'AdventureWorksDW2017' TO '/var/opt/mssql/data/AdventureWorksDW2017.mdf', MOVE 'AdventureWorksDW2017_log' TO '/var/opt/mssql/data/AdventureWorksDW2017_log.ldf'"
+echo "RESTORE DATABASE AdventureWorksDW2017 FROM DISK = '$(pwd)/AdventureWorksDW2017.bak' WITH MOVE 'AdventureWorksDW2017' TO '/var/opt/mssql/data/AdventureWorksDW2017.mdf', MOVE 'AdventureWorksDW2017_log' TO '/var/opt/mssql/data/AdventureWorksDW2017_log.ldf'" | isql -v MSSQL sa Alaska2017
 ```
 
 ### 3. 运行分析任务
@@ -283,7 +282,7 @@ docker logs adventureworks
 docker port adventureworks
 
 # 检查数据库状态
-sqlcmd -S localhost,8433 -U sa -P Alaska2017 -Q "SELECT name, state_desc FROM sys.databases"
+echo "SELECT name, state_desc FROM sys.databases" | isql -v MSSQL sa Alaska2017
 ```
 
 #### 4.2 依赖问题
@@ -311,15 +310,13 @@ uv run python --version
 uv run which python
 
 # 检查依赖状态
-uv pip list
+uv tree
 ```
 
 ### 5. 开发说明
 
 1. 代码规范
    - 遵循PEP 8编码规范
-   - 使用类型注解
-   - 编写单元测试
 
 2. 文档维护
    - 更新README.md
