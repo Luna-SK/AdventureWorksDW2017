@@ -183,6 +183,9 @@ def feature_engineering(df, cutoff_date):
     print(f"开始计算行为特征...")
     
     for i, customer_key in enumerate(static_df.index):
+        if i % 1000 == 0:
+            print(f"  处理进度: {i}/{len(static_df)} ({i/len(static_df)*100:.1f}%)")
+        
         customer_data = historical_df[historical_df['CustomerKey'] == customer_key]
         
         if len(customer_data) == 0:
@@ -857,7 +860,7 @@ def plot_feature_importance(clf, feature_names, top_n=15):
         # 随机森林等有特征重要性的模型
         importances = clf.feature_importances_
         indices = importances.argsort()[::-1][:top_n]
-
+        
         plt.figure(figsize=(10, 8))
         ax = sns.barplot(
             x=importances[indices],
@@ -865,25 +868,25 @@ def plot_feature_importance(clf, feature_names, top_n=15):
             color="#4C72B0",
             orient="h"
         )
-
+        
         plt.title(f"Top {top_n} Feature Importances", fontsize=14)
         plt.xlabel("Importance", fontsize=12)
         plt.ylabel("")
-
+        
         # 添加数值标签
         for i, v in enumerate(importances[indices]):
             ax.text(v + 0.001, i, f"{v:.3f}", va="center", fontsize=10)
-
+        
         plt.tight_layout()
         plt.savefig(os.path.join(REPORT_DIR, "feature_importance.png"), dpi=120)
         plt.close()
         print("已保存特征重要性图 (基于特征重要性)")
-
+        
     elif hasattr(clf, 'coef_'):
         # 逻辑回归等有系数的模型
         coefficients = np.abs(clf.coef_[0])
         indices = coefficients.argsort()[::-1][:top_n]
-
+        
         plt.figure(figsize=(10, 8))
         ax = sns.barplot(
             x=coefficients[indices],
@@ -891,20 +894,20 @@ def plot_feature_importance(clf, feature_names, top_n=15):
             color="#DD8452",
             orient="h"
         )
-
+        
         plt.title(f"Top {top_n} Feature Coefficients (Absolute Values)", fontsize=14)
         plt.xlabel("|Coefficient|", fontsize=12)
         plt.ylabel("")
-
+        
         # 添加数值标签
         for i, v in enumerate(coefficients[indices]):
             ax.text(v + 0.001, i, f"{v:.3f}", va="center", fontsize=10)
-
+        
         plt.tight_layout()
         plt.savefig(os.path.join(REPORT_DIR, "feature_importance.png"), dpi=120)
         plt.close()
         print("已保存特征重要性图 (基于系数绝对值)")
-
+        
     else:
         # SVM等没有直接特征重要性的模型
         print("SVM模型无法直接获取特征重要性，跳过特征重要性可视化")
@@ -1052,16 +1055,14 @@ def identify_high_risk_customers(clf, scaler, features_df, customer_keys, thresh
     print(f"效果评估: 通过概率变化评估干预效果")
     
     # 生成业务建议
-    # 删除详细输出
-    # generate_business_recommendations(results_df, features_df)
+    generate_business_recommendations(results_df, features_df)
     
     return results_df, high_risk
 
 
 def generate_business_recommendations(results_df, features_df):
     """生成业务建议"""
-    # 删除详细输出，只保留函数功能
-    # print(f"\n=== 业务建议 ===")
+    print(f"\n=== 业务建议 ===")
     
     # 合并特征数据
     analysis_df = results_df.merge(features_df, on='CustomerKey', how='left')
@@ -1069,17 +1070,118 @@ def generate_business_recommendations(results_df, features_df):
     # 高风险客户特征分析
     high_risk_customers = analysis_df[analysis_df['churn_probability'] >= 0.7]
     
+    if len(high_risk_customers) > 0:
+        print(f"\n针对高风险客户 ({len(high_risk_customers)}人):")
+        
+        # 分析高风险客户特征（检查列是否存在）
+        available_features = []
+        if 'rfm_recency' in analysis_df.columns:
+            avg_recency = high_risk_customers['rfm_recency'].mean()
+            print(f"  平均最近购买时间: {avg_recency:.0f}天")
+            available_features.append('rfm_recency')
+        
+        if 'total_orders' in analysis_df.columns:
+            avg_orders = high_risk_customers['total_orders'].mean()
+            print(f"  平均历史订单数: {avg_orders:.1f}次")
+            available_features.append('total_orders')
+        
+        if 'total_amount' in analysis_df.columns:
+            avg_amount = high_risk_customers['total_amount'].mean()
+            print(f"  平均历史消费金额: ${avg_amount:.0f}")
+            available_features.append('total_amount')
+        
+        if 'is_new_customer' in analysis_df.columns:
+            new_customer_ratio = high_risk_customers['is_new_customer'].mean() * 100
+            print(f"  新客户占比: {new_customer_ratio:.1f}%")
+            available_features.append('is_new_customer')
+        
+        # 具体建议
+        print(f"\n  具体建议:")
+        if 'rfm_recency' in available_features and avg_recency > 180:
+            print(f"    • 制定客户唤醒计划，提供专属优惠")
+        if 'total_orders' in available_features and avg_orders < 5:
+            print(f"    • 增加客户互动频率，提供产品推荐")
+        if 'is_new_customer' in available_features and new_customer_ratio > 30:
+            print(f"    • 加强新客户引导，建立品牌忠诚度")
+        print(f"    • 提供个性化服务，建立客户关系")
+        print(f"    • 定期客户关怀，了解客户需求")
+    
     # 中风险客户建议
     medium_risk_customers = analysis_df[
         (analysis_df['churn_probability'] >= 0.3) & 
         (analysis_df['churn_probability'] < 0.7)
     ]
     
+    if len(medium_risk_customers) > 0:
+        print(f"\n针对中风险客户 ({len(medium_risk_customers)}人):")
+        print(f"  建议:")
+        print(f"    • 定期促销活动，提高购买频率")
+        print(f"    • 产品推荐和交叉销售")
+        print(f"    • 客户满意度调查和反馈收集")
+        print(f"    • 会员积分和奖励计划")
+    
     # 低风险客户建议
     low_risk_customers = analysis_df[analysis_df['churn_probability'] < 0.3]
     
-    # 删除所有详细的print输出，保留函数逻辑
-    # 这里只保留数据处理逻辑，不输出详细建议
+    if len(low_risk_customers) > 0:
+        print(f"\n针对低风险客户 ({len(low_risk_customers)}人):")
+        print(f"  建议:")
+        print(f"    • 保持优质服务，维护客户关系")
+        print(f"    • 推荐高端产品和增值服务")
+        print(f"    • 邀请参与VIP活动和专属服务")
+        print(f"    • 客户推荐计划和口碑营销")
+    
+    # 总体策略建议
+    print(f"\n总体策略建议:")
+    print(f"  • 建立客户流失预警监控体系")
+    print(f"  • 实施差异化客户服务策略")
+    print(f"  • 定期更新客户流失预测模型")
+    print(f"  • 建立客户生命周期管理体系")
+    print(f"  • 加强数据驱动的决策支持")
+    
+    # 具体执行建议
+    print(f"\n=== 具体执行建议 ===")
+    print(f"短期策略 (1-3个月):")
+    print(f"  • 立即联系高风险客户，了解流失原因")
+    print(f"  • 为高风险客户提供专属优惠和个性化服务")
+    print(f"  • 建立客户关怀团队，定期跟进客户状态")
+    print(f"  • 优化客户服务流程，提高响应速度")
+    
+    print(f"\n中期策略 (3-6个月):")
+    print(f"  • 完善客户数据收集和分析体系")
+    print(f"  • 建立客户价值评估和分层管理机制")
+    print(f"  • 开发个性化产品推荐系统")
+    print(f"  • 实施客户忠诚度计划和奖励机制")
+    
+    print(f"\n长期策略 (6-12个月):")
+    print(f"  • 构建完整的客户生命周期管理体系")
+    print(f"  • 建立预测性客户服务模型")
+    print(f"  • 开发智能客户关系管理系统")
+    print(f"  • 建立数据驱动的业务决策支持平台")
+    
+    # 预期效果评估
+    print(f"\n=== 预期效果评估 ===")
+    print(f"客户流失率改善:")
+    print(f"  • 短期目标: 降低流失率 10-15%")
+    print(f"  • 中期目标: 降低流失率 20-25%")
+    print(f"  • 长期目标: 降低流失率 30%以上")
+    
+    print(f"\n客户价值提升:")
+    print(f"  • 客户生命周期价值提升 15-20%")
+    print(f"  • 客户满意度提升 20-25%")
+    print(f"  • 客户推荐率提升 10-15%")
+    
+    print(f"\n业务效益:")
+    print(f"  • 减少客户获取成本 20-30%")
+    print(f"  • 提高客户留存率 15-25%")
+    print(f"  • 增加客户复购率 10-20%")
+    
+    # 风险提示
+    print(f"\n=== 风险提示 ===")
+    print(f"  • 过度营销可能导致客户反感")
+    print(f"  • 个性化服务需要平衡隐私保护")
+    print(f"  • 模型预测结果需要定期验证和更新")
+    print(f"  • 客户挽留成本需要控制在合理范围内")
 
 
 def select_features(X, y, method='correlation', threshold=0.01):
@@ -1170,12 +1272,11 @@ def select_features(X, y, method='correlation', threshold=0.01):
 
 def plot_feature_histograms(data, feature_names, max_features=10):
     """可视化主要特征分布"""
-    # 删除详细输出
-    # print(f"生成特征分布图 - 特征数量: {len(feature_names)}")
+    print(f"生成特征分布图 - 特征数量: {len(feature_names)}")
     
     # 限制特征数量，避免生成过多图表
     if len(feature_names) > max_features:
-        # print(f"特征数量过多，只显示前{max_features}个特征")
+        print(f"特征数量过多，只显示前{max_features}个特征")
         feature_names = feature_names[:max_features]
     
     for col in feature_names:
@@ -1217,18 +1318,16 @@ def plot_feature_histograms(data, feature_names, max_features=10):
             plt.tight_layout()
             plt.savefig(os.path.join(REPORT_DIR, f"{col}_hist.png"), dpi=120)
             plt.close()
-            # 删除详细输出
-            # print(f"已保存 {col}_hist.png")
+            print(f"已保存 {col}_hist.png")
 
 
 def plot_feature_correlation_heatmap(X, max_features=20):
     """可视化特征相关性热力图"""
-    # 删除详细输出
-    # print("生成特征相关性热力图")
+    print("生成特征相关性热力图")
     
     # 限制特征数量，避免热力图过于复杂
     if len(X.columns) > max_features:
-        # print(f"特征数量过多，只显示前{max_features}个特征")
+        print(f"特征数量过多，只显示前{max_features}个特征")
         X_subset = X.iloc[:, :max_features]
     else:
         X_subset = X
@@ -1252,18 +1351,16 @@ def plot_feature_correlation_heatmap(X, max_features=20):
     plt.tight_layout()
     plt.savefig(os.path.join(REPORT_DIR, "feature_correlation_heatmap.png"), dpi=120)
     plt.close()
-    # 删除详细输出
-    # print("已保存 feature_correlation_heatmap.png")
+    print("已保存 feature_correlation_heatmap.png")
 
 
 def plot_feature_vs_target(data, feature_names, target_col='churn', max_features=10):
     """可视化特征与目标变量的关系"""
-    # 删除详细输出
-    # print(f"生成特征与目标变量关系图 - 特征数量: {len(feature_names)}")
+    print(f"生成特征与目标变量关系图 - 特征数量: {len(feature_names)}")
     
     # 限制特征数量
     if len(feature_names) > max_features:
-        # print(f"特征数量过多，只显示前{max_features}个特征")
+        print(f"特征数量过多，只显示前{max_features}个特征")
         feature_names = feature_names[:max_features]
     
     for col in feature_names:
@@ -1289,8 +1386,7 @@ def plot_feature_vs_target(data, feature_names, target_col='churn', max_features
             plt.tight_layout()
             plt.savefig(os.path.join(REPORT_DIR, f"{col}_vs_{target_col}.png"), dpi=120)
             plt.close()
-            # 删除详细输出
-            # print(f"已保存 {col}_vs_{target_col}.png")
+            print(f"已保存 {col}_vs_{target_col}.png")
 
 
 def main():
@@ -1339,8 +1435,7 @@ def main():
     
     # 6. 可视化流失分布
     plot_churn_distribution(label_df)
-    # 删除详细输出
-    # print("已保存客户流失分布图")
+    print("已保存客户流失分布图")
     
     # 7. 合并特征和标签
     print("\n6. 合并特征和标签...")
@@ -1392,8 +1487,7 @@ def main():
     plot_precision_recall_curve(y_test, y_score)
     plot_feature_importance(clf, X_selected.columns)
     
-    # 删除详细输出
-    # print("已保存所有评估图表")
+    print("已保存所有评估图表")
     
     # 14. 识别高风险客户
     print("\n12. 识别高风险客户...")
@@ -1466,6 +1560,39 @@ def main():
         f.write(f"• 定期更新客户流失预测模型\n")
         f.write(f"• 建立客户生命周期管理体系\n")
         f.write(f"• 加强数据驱动的决策支持\n")
+    
+    print("=== 模型训练完成 ===")
+    print(f"所有结果已保存到: {REPORT_DIR}")
+    print(f"\n=== 生成的文件和图表 ===")
+    print(f"📊 数据文件:")
+    print(f"  • 高风险客户名单: {REPORT_DIR}high_risk_customers.csv")
+    print(f"  • 所有客户预测结果: {REPORT_DIR}all_customer_predictions.csv")
+    print(f"  • 特征选择结果: {REPORT_DIR}selected_features.csv")
+    print(f"  • 模型性能报告: {REPORT_DIR}model_performance.txt")
+    
+    print(f"\n📈 可视化图表:")
+    print(f"  • 客户流失分布: {REPORT_DIR}churn_distribution.png")
+    print(f"  • 特征分布图: {REPORT_DIR}*_hist.png")
+    print(f"  • 特征相关性图: {REPORT_DIR}feature_correlation_heatmap.png")
+    print(f"  • 特征与目标关系图: {REPORT_DIR}*_vs_churn.png")
+    print(f"  • 模型比较图: {REPORT_DIR}model_comparison.png")
+    print(f"  • 模型解释性图: {REPORT_DIR}*_feature_importance.png 或 *_coefficients.png")
+    print(f"  • 混淆矩阵: {REPORT_DIR}confusion_matrix.png")
+    print(f"  • ROC曲线: {REPORT_DIR}roc_curve.png")
+    print(f"  • 精确率-召回率曲线: {REPORT_DIR}precision_recall_curve.png")
+    
+    print(f"\n🎯 关键发现:")
+    print(f"  • 流失率: {label_df['churn'].mean()*100:.1f}%")
+    print(f"  • 高风险客户比例: {len(high_risk)/len(all_results)*100:.1f}%")
+    print(f"  • 模型AUC: {comparison_df['AUC'].max():.3f}")
+    print(f"  • 特征选择率: {len(selected_features)/len(X.columns)*100:.1f}%")
+    
+    print(f"\n💡 业务建议:")
+    print(f"  • 重点关注高风险客户群体")
+    print(f"  • 建立客户流失预警机制")
+    print(f"  • 实施差异化营销策略")
+    print(f"  • 定期更新预测模型")
+
 
 if __name__ == "__main__":
     main()
